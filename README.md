@@ -77,3 +77,8 @@ You can interact with the API using any tool like Postman, cURL, or directly thr
 
 **Interactive Documentation**
 Navigate to http://127.0.0.1:8000/docs in your web browser to view the Swagger UI, which provides a clean interface to test all the API endpoints.
+
+**Database**
+This application is powered by a PostgreSQL database, linked to the FastAPI application using the SQLAlchemy ORM. This setup allows for robust and secure data management.
+
+Note: For local development, the database connection string is configured using an environment variable for security. Please refer to the .env.example file for the required variables.
