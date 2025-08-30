@@ -1,14 +1,14 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-
-class LikeResponse(BaseModel):
+class LikeBase(BaseModel):
     post_id: int
-    likes: int
 
-class LikeCreate(BaseModel):
+class LikeCreate(LikeBase):
+    pass
+
+class Like(LikeBase):
+    id: int
     username: str
-    post_id: int
 
-class LikeDelete(BaseModel):
-    username: str
-    post_id: int
+    class Config:
+        orm_mode = True

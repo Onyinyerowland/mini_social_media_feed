@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordRequestForm
-from jose import JWTError, jwt
+from jose import jwt
 from typing import Optional
 
 # Import the models and database dependencies
@@ -156,4 +156,3 @@ def read_users_me(current_user: models.User = Depends(get_current_active_user)):
     Retrieves the currently authenticated user's information.
     """
     return current_user
-

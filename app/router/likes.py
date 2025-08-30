@@ -1,26 +1,63 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException,status, Depends
 from app.database import posts_db
+from sqlalchemy.orm import Session
+from .. import models
+from ..database import get_db
+from ..schemas import likes as likes_schema
+from ..security import get_current_user
 
-router = APIRouter()
+router = APIRouter(prefix="/likes", tags=["Likes"])
 
-@router.post("/posts/{post_id}/like")
-def like_post(post_id: int):
-    for post in posts_db:
-        if post.post_id == post_id:
-            post.likes += 1
-            return {"message": f"Post {post_id} liked successfully", "likes": post.likes}
 
-    raise HTTPException(status_code=404, detail="Post not found")
+@router.post("/", status_code=status.HTTP_201_CREATED)
+def like_post(
+    like: likes_schema.LikeCreate,
+    db: Session = Depends(get_db),
+    current_user_username: str = Depends(get_current_user),
+):
+    # Check if the post exists
+    post = db.query(models.Post).filter(models.Post.id == like.post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
 
-@router.post("/posts/{post_id}/unlike")
-def unlike_post(post_id: int):
-    for post in posts_db:
-        if post.post_id == post_id:
-            if post.likes > 0:
-                post.likes -= 1
-            return {"message": f"Post {post_id} unliked successfully", "likes": post.likes}
+    # Check if the user has already liked the post
+    existing_like = db.query(models.Like).filter(
+        models.Like.post_id == like.post_id,
+        models.Like.username == current_user_username,
+    ).first()
 
-    raise HTTPException(status_code=404, detail="Post not found")
+    if existing_like:
+        raise HTTPException(status_code=409, detail="User has already liked this post")
+
+    # Create the like
+    new_like = models.Like(
+        post_id=like.post_id,
+        username=current_user_username,
+    )
+    db.add(new_like)
+    db.commit()
+    return {"message": "Post liked successfully"}
+
+@router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
+def unlike_post(
+    like: likes_schema.LikeCreate,
+    db: Session = Depends(get_db),
+    current_user_username: str = Depends(get_current_user),
+):
+    # Find the like
+    like_to_delete = db.query(models.Like).filter(
+        models.Like.post_id == like.post_id,
+        models.Like.username == current_user_username,
+    ).first()
+
+    if not like_to_delete:
+        raise HTTPException(status_code=404, detail="Like not found")
+
+    db.delete(like_to_delete)
+    db.commit()
+    return
+
+
 @router.get("/posts/{post_id}/likes")
 def get_post_likes(post_id: int):
     for post in posts_db:
